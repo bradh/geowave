@@ -58,12 +58,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 // @formatter:off
-/*if[ACCUMULO_1.5.1]
+/*if[ACCUMULO_1.5.2]
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 import org.apache.accumulo.core.security.thrift.TCredentials;
-end[ACCUMULO_1.5.1]*/
+end[ACCUMULO_1.5.2]*/
 // @formatter:on
 
 public class GeoWaveInputFormat extends
@@ -229,7 +229,7 @@ public class GeoWaveInputFormat extends
 			throws TableNotFoundException {
 		TabletLocator tabletLocator;
 		// @formatter:off
-		/*if[ACCUMULO_1.5.1]
+		/*if[ACCUMULO_1.5.2]
 		tabletLocator = TabletLocator.getInstance(
 				instance,
 				new Text(
@@ -237,9 +237,9 @@ public class GeoWaveInputFormat extends
 								instance,
 								tableName)));
 
-  		else[ACCUMULO_1.5.1]*/
+  		else[ACCUMULO_1.5.2]*/
 		tabletLocator = TabletLocator.getLocator(instance, new Text(tableId));
-		/*end[ACCUMULO_1.5.1]*/
+		/*end[ACCUMULO_1.5.2]*/
 		// @formatter:on
 		return tabletLocator;
 	}
@@ -256,7 +256,7 @@ public class GeoWaveInputFormat extends
 			TableNotFoundException,
 			IOException {
 		// @formatter:off
-		/*if[ACCUMULO_1.5.1]
+		/*if[ACCUMULO_1.5.2]
 		final ByteArrayOutputStream backingByteArray = new ByteArrayOutputStream();
 		final DataOutputStream output = new DataOutputStream(
 				backingByteArray);
@@ -273,7 +273,7 @@ public class GeoWaveInputFormat extends
 				rangeList,
 				tserverBinnedRanges,
 				credentials).isEmpty();
-  		else[ACCUMULO_1.5.1]*/
+  		else[ACCUMULO_1.5.2]*/
 		return tabletLocator.binRanges(
 				new Credentials(
 						userName,
@@ -281,7 +281,7 @@ public class GeoWaveInputFormat extends
 								password)),
 				rangeList,
 				tserverBinnedRanges).isEmpty();
-  		/*end[ACCUMULO_1.5.1]*/
+  		/*end[ACCUMULO_1.5.2]*/
 		// @formatter:on
 	}
 
