@@ -3,6 +3,7 @@ package mil.nga.giat.geowave.raster.adapter;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
@@ -31,10 +32,12 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.measure.unit.Unit;
+import javax.media.jai.BorderExtender;
 import javax.media.jai.Interpolation;
 import javax.media.jai.InterpolationBicubic2;
 import javax.media.jai.InterpolationBilinear;
 import javax.media.jai.InterpolationNearest;
+import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.remote.SerializableState;
 import javax.media.jai.remote.SerializerFactory;
@@ -135,15 +138,19 @@ public class RasterDataAdapter implements
 		IndexDependentDataAdapter<GridCoverage>,
 		AttachedIteratorDataAdapter<GridCoverage>,
 		HadoopDataAdapter<GridCoverage, GridCoverageWritable>
-{ // these priorities are fairly arbitrary at the moment
+{ 
+	static {
+		SourceThresholdFixMosaicDescriptor.register(false);
+	}
+	// these priorities are fairly arbitrary at the moment
 	private static final int RASTER_TILE_COMBINER_PRIORITY = 4;
 	private static final int RASTER_TILE_VISIBILITY_COMBINER_PRIORITY = 6;
 	private final static Logger LOGGER = Logger.getLogger(RasterDataAdapter.class);
-
 	private final static ByteArrayId DATA_FIELD_ID = new ByteArrayId(
 			"image");
 	private final static int DEFAULT_TILE_SIZE = 256;
 	private final static boolean DEFAULT_BUILD_PYRAMID = false;
+	private static Operations resampleOperations;
 
 	/**
 	 * A transparent color for missing data.
@@ -169,7 +176,6 @@ public class RasterDataAdapter implements
 	private DataStatisticsVisibilityHandler<GridCoverage> visibilityHandler;
 	private RootMergeStrategy<?> mergeStrategy;
 	private boolean equalizeHistogram;
-
 	private Interpolation interpolation;
 
 	protected RasterDataAdapter() {}
@@ -662,13 +668,12 @@ public class RasterDataAdapter implements
 								tileInterpolation = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
 							}
 						}
-						final GridCoverage resampledCoverage = (GridCoverage) Operations.DEFAULT.resample(
+						final GridCoverage resampledCoverage = (GridCoverage) getResampleOperations().resample(
 								originalData,
 								GeoWaveGTRasterFormat.DEFAULT_CRS,
 								insertionIdGeometry,
 								tileInterpolation,
 								backgroundValuesPerBand);
-
 						// NOTE: for now this is commented out, but beware the
 						// resample operation under certain conditions,
 						// this requires more investigation rather than adding a
@@ -738,6 +743,32 @@ public class RasterDataAdapter implements
 				}
 			};
 		}
+	}
+
+	private static synchronized Operations getResampleOperations() {
+		if (resampleOperations == null) {
+			final RenderingHints resampleHints = new RenderingHints(
+					RenderingHints.KEY_RENDERING,
+					RenderingHints.VALUE_RENDER_QUALITY);
+			resampleHints.put(
+					RenderingHints.KEY_ALPHA_INTERPOLATION,
+					RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+			resampleHints.put(
+					RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+			resampleHints.put(
+					RenderingHints.KEY_COLOR_RENDERING,
+					RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+			resampleHints.put(
+					RenderingHints.KEY_DITHERING,
+					RenderingHints.VALUE_DITHER_ENABLE);
+			resampleHints.put(
+					JAI.KEY_BORDER_EXTENDER,
+					BorderExtender.createInstance(BorderExtender.BORDER_COPY));
+			resampleOperations = new Operations(
+					resampleHints);
+		}
+		return resampleOperations;
 	}
 
 	@Override
@@ -1730,6 +1761,14 @@ public class RasterDataAdapter implements
 					e);
 		}
 		return null;
+	}
+
+	public boolean isEqualizeHistogram() {
+		return equalizeHistogram;
+	}
+
+	public Interpolation getInterpolation() {
+		return interpolation;
 	}
 
 }

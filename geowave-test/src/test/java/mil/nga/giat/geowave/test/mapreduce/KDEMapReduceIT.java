@@ -12,17 +12,20 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.media.jai.Interpolation;
 
+import mil.nga.giat.geowave.accumulo.util.ConnectorPool;
 import mil.nga.giat.geowave.analytics.mapreduce.kde.KDEJobRunner;
+import mil.nga.giat.geowave.ingest.IngestMain;
 import mil.nga.giat.geowave.raster.RasterUtils;
 import mil.nga.giat.geowave.raster.plugin.GeoWaveGTRasterFormat;
 import mil.nga.giat.geowave.raster.plugin.GeoWaveRasterConfig;
 import mil.nga.giat.geowave.raster.plugin.GeoWaveRasterReader;
 import mil.nga.giat.geowave.raster.resize.RasterTileResizeJobRunner;
 import mil.nga.giat.geowave.store.index.IndexType;
-import mil.nga.giat.geowave.types.gpx.GpxUtils;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.util.ToolRunner;
 import org.geotools.geometry.GeneralEnvelope;
 import org.junit.Test;
@@ -39,13 +42,29 @@ public class KDEMapReduceIT extends
 	private static final int BASE_MIN_LEVEL = 14;
 	private static final int BASE_MAX_LEVEL = 16;
 
+	private void testIngestShp(
+			final IndexType indexType,
+			final String ingestFilePath ) {
+		// ingest a shapefile (geotools type) directly into GeoWave using the
+		// ingest framework's main method and pre-defined commandline arguments
+		// LOGGER.warn("Ingesting '" + ingestFilePath +
+		// "' - this may take several minutes...");
+		final String[] args = StringUtils.split(
+				"-localingest -t geotools-vector -b " + ingestFilePath + " -z " + zookeeper + " -i " + accumuloInstance + " -u " + accumuloUser + " -p " + accumuloPassword + " -n " + TEST_NAMESPACE + " -dim " + (indexType.equals(IndexType.SPATIAL_VECTOR) ? "spatial" : "spatial-temporal"),
+				' ');
+		IngestMain.main(args);
+	}
+
 	@Test
 	public void testKDEAndRasterResize()
 			throws Exception {
 		accumuloOperations.deleteAll();
-		testIngest(
+		testIngestShp(
 				IndexType.SPATIAL_VECTOR,
-				GENERAL_GPX_INPUT_GPX_DIR);
+				"C:\\Users\\rfecher\\DotMatrixWorkspace\\data\\Export_Dots.shp");
+		// testIngest(
+		// IndexType.SPATIAL_VECTOR,
+		// GENERAL_GPX_INPUT_GPX_DIR);
 
 		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
 			final String tileSizeCoverageName = TEST_COVERAGE_NAME_PREFIX + i;
@@ -57,7 +76,9 @@ public class KDEMapReduceIT extends
 						accumuloUser,
 						accumuloPassword,
 						TEST_NAMESPACE,
-						GpxUtils.GPX_WAYPOINT_FEATURE,
+						// GpxUtils.GPX_WAYPOINT_FEATURE,
+
+						"Export_Dots",
 						new Integer(
 								BASE_MIN_LEVEL - i).toString(),
 						new Integer(
@@ -79,91 +100,101 @@ public class KDEMapReduceIT extends
 
 		final int[] counts1 = testCounts(
 				TEST_COVERAGE_NAME_PREFIX,
+				"first",
 				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
 				new Rectangle(
-						256,
-						256));
+						64,
+						64));
 
-		// final Connector conn = ConnectorPool.getInstance().getConnector(
-		// zookeeper,
-		// accumuloInstance,
-		// accumuloUser,
-		// accumuloPassword);
-		// conn.tableOperations().compact(
-		// TEST_NAMESPACE + "_" +
-		// IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
-		// null,
-		// null,
-		// true,
-		// true);
-		// final int[] counts2 = testCounts(
-		// TEST_COVERAGE_NAME_PREFIX,
-		// MAX_TILE_SIZE_POWER_OF_2 + 1,
-		// new Rectangle(
-		// 256,
-		// 256));
-
-		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i+=INCREMENT) {
-			final String originalTileSizeCoverageName = TEST_COVERAGE_NAME_PREFIX + i;
-			final String resizeTileSizeCoverageName = TEST_RESIZE_COVERAGE_NAME_PREFIX + i;
-			ToolRunner.run(
-					new RasterTileResizeJobRunner(),
-					new String[] {
-						zookeeper,
-						accumuloInstance,
-						accumuloUser,
-						accumuloPassword,
-						TEST_NAMESPACE,
-						originalTileSizeCoverageName,
-						new Integer(
-								MIN_INPUT_SPLITS).toString(),
-						new Integer(
-								MAX_INPUT_SPLITS).toString(),
-						hdfs,
-						jobtracker,
-						resizeTileSizeCoverageName,
-						TEST_NAMESPACE,
-						new Integer(
-								(int) Math.pow(
-										2,
-										MAX_TILE_SIZE_POWER_OF_2 - i)).toString()
-					});
-		}
-		//
-		final int[] counts3 = testCounts(
-				TEST_RESIZE_COVERAGE_NAME_PREFIX,
-				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
-				new Rectangle(
-						256,
-						256));
-
-		// conn.tableOperations().compact(
-		// TEST_NAMESPACE + "_" +
-		// IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
-		// null,
-		// null,
-		// true,
-		// true);
-		//
-		// final int[] counts4 = testCounts(
-		// TEST_RESIZE_COVERAGE_NAME_PREFIX,
-		// MAX_TILE_SIZE_POWER_OF_2 + 1,
-		// new Rectangle(
-		// 64,
-		// 64));
+//		final Connector conn = ConnectorPool.getInstance().getConnector(
+//				zookeeper,
+//				accumuloInstance,
+//				accumuloUser,
+//				accumuloPassword);
+//		conn.tableOperations().compact(
+//				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
+//				null,
+//				null,
+//				true,
+//				true);
+//		final int[] counts2 = testCounts(
+//				TEST_COVERAGE_NAME_PREFIX,
+//				"compact",
+//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+//				new Rectangle(
+//						256,
+//						256));
+//
+//		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
+//			final String originalTileSizeCoverageName = TEST_COVERAGE_NAME_PREFIX + i;
+//			final String resizeTileSizeCoverageName = TEST_RESIZE_COVERAGE_NAME_PREFIX + i;
+//			ToolRunner.run(
+//					new RasterTileResizeJobRunner(),
+//					new String[] {
+//						zookeeper,
+//						accumuloInstance,
+//						accumuloUser,
+//						accumuloPassword,
+//						TEST_NAMESPACE,
+//						originalTileSizeCoverageName,
+//						new Integer(
+//								MIN_INPUT_SPLITS).toString(),
+//						new Integer(
+//								MAX_INPUT_SPLITS).toString(),
+//						hdfs,
+//						jobtracker,
+//						resizeTileSizeCoverageName,
+//						TEST_NAMESPACE,
+//						new Integer(
+//								(int) Math.pow(
+//										2,
+//										MAX_TILE_SIZE_POWER_OF_2 - i)).toString()
+//					});
+//		}
+//		//
+//		final int[] counts3 = testCounts(
+//				TEST_RESIZE_COVERAGE_NAME_PREFIX,
+//				"first",
+//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+//				new Rectangle(
+//						256,
+//						256));
+//
+//		conn.tableOperations().compact(
+//				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
+//				null,
+//				null,
+//				true,
+//				true);
+//
+//		final int[] counts4 = testCounts(
+//				TEST_RESIZE_COVERAGE_NAME_PREFIX,
+//				"compact",
+//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+//				new Rectangle(
+//						256,
+//						256));
 
 		System.err.println("testing kde");
 		for (int i = 0; i < counts1.length; i++) {
 			System.err.println("counts[" + i + "]:" + counts1[i]);
-		}
-		System.err.println("testing resize");
-		for (int i = 0; i < counts3.length; i++) {
-			System.err.println("counts[" + i + "]:" + counts3[i]);
-		}
+		}	System.err.println("testing kde after compaction");
+//		for (int i = 0; i < counts2.length; i++) {
+//			System.err.println("counts[" + i + "]:" + counts2[i]);
+//		}
+//		System.err.println("testing resize");
+//		for (int i = 0; i < counts3.length; i++) {
+//			System.err.println("counts[" + i + "]:" + counts3[i]);
+//		}
+//		System.err.println("testing resize after compaction");
+//		for (int i = 0; i < counts4.length; i++) {
+//			System.err.println("counts[" + i + "]:" + counts4[i]);
+//		}
 	}
 
 	private static int[] testCounts(
 			final String coverageNamePrefix,
+			final String after,
 			final int numCoverages,
 			final Rectangle pixelDimensions )
 			throws IOException,
@@ -180,20 +211,42 @@ public class KDEMapReduceIT extends
 						Interpolation.INTERP_NEAREST));
 		final GeneralEnvelope queryEnvelope = new GeneralEnvelope(
 				new double[] {
-					-71.3,
-					42.05
+					// -71.12,
+//						52.5421142578125,
+//						29.608154296875
+					52.5,
+					// 42.38
+					29.58
+				// -72,
+				// 42
 				},
 				new double[] {
-					-71.27,
-					42.07
+					// -71.07,
+//						52.547607421875,
+//						29.6136474609375
+					52.57,
+					29.65
+				// 42.4
+				// -71,
+				// 43
 				});
+
+		// final GeneralEnvelope queryEnvelope = new GeneralEnvelope(
+		// new double[] {
+		// -71.3,
+		// 42.05
+		// },
+		// new double[] {
+		// -71.27,
+		// 42.07
+		// });
 		queryEnvelope.setCoordinateReferenceSystem(GeoWaveGTRasterFormat.DEFAULT_CRS);
 		final Raster[] rasters = new Raster[numCoverages];
 		final int[] counts = new int[numCoverages];
 		int coverageCount = 0;
-		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i+=INCREMENT) {
+		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
 			final String tileSizeCoverageName = coverageNamePrefix + i;
-			RasterUtils.COVERAGE_NAME = coverageNamePrefix + "_" + i + "_";
+			RasterUtils.COVERAGE_NAME = coverageNamePrefix + "_" +after + "_" + i + "_";
 			final GridCoverage gridCoverage = reader.renderGridCoverage(
 					tileSizeCoverageName,
 					pixelDimensions,
@@ -203,11 +256,12 @@ public class KDEMapReduceIT extends
 			final RenderedImage image = gridCoverage.getRenderedImage();
 			final Raster raster = image.getData();
 			rasters[coverageCount] = raster;
-			File dir = new File("C:\\Temp\\kde_test10");
+			final File dir = new File(
+					"C:\\Temp\\kde_test16");
 			dir.mkdirs();
 			final File f = new File(
 					dir,
-					coverageNamePrefix + "_" + i + ".png");
+					coverageNamePrefix + "_" +after + "_" + i + ".png");
 			f.delete();
 			f.createNewFile();
 			final BufferedImage heatmap = new BufferedImage(

@@ -69,10 +69,6 @@ public class SourceThresholdFixMosaicDescriptor extends
 	};
 	static boolean registered = false;
 
-	static {
-		register(false);
-	}
-
 	public synchronized static void register(
 			final boolean force ) {
 		if (!registered || force) {

@@ -403,7 +403,7 @@ public class RasterUtils
 			final boolean xAxisSwitch,
 			final GridCoverageFactory coverageFactory,
 			final String coverageName,
-			final Integer interpolation,
+			final Interpolation interpolation,
 			final Histogram histogram,
 			final ColorModel defaultColorModel ) {
 		final double rescaleX = levelResX / (requestEnvelope.getSpan(0) / pixelDimension.getWidth());
@@ -439,13 +439,15 @@ public class RasterUtils
 					posx,
 					posy,
 					coverageImage.getData());
+//			if (COVERAGE_NAME.equals("TEST_RESIZE_2_")){
 			final Raster raster = coverageImage.getData();
 			final File dir = new File(
-					"C:\\Temp\\kde_test11");
+					"C:\\Temp\\kde_test13");
 			dir.mkdirs();
+				
 			final File f = new File(
 					dir,
-					COVERAGE_NAME + posx + "_" + posy + ".png");
+					COVERAGE_NAME + posx+"_" +posy + "_" + coverageEnv.getMinimum(0) + "_" + coverageEnv.getMaximum(0) + "_" + coverageEnv.getMinimum(1) + "_" + coverageEnv.getMaximum(1) + ".png");
 			f.delete();
 			try {
 				f.createNewFile();
@@ -484,7 +486,8 @@ public class RasterUtils
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+			}
+//		}
 
 		if (image == null) {
 			image = getEmptyImage(
@@ -619,7 +622,7 @@ public class RasterUtils
 	}
 
 	private static BufferedImage rescaleImageViaPlanarImage(
-			Integer interpolation,
+			Interpolation interpolation,
 			final double rescaleX,
 			final double rescaleY,
 			final BufferedImage image ) {
@@ -628,16 +631,6 @@ public class RasterUtils
 				image.getWidth(),
 				image.getHeight());
 
-		interpolation = Interpolation.INTERP_BICUBIC;
-		if (interpolation != null) {
-			if (interpolation.intValue() == 1) {
-				interpolation = Interpolation.INTERP_NEAREST;
-			}
-
-			else if (interpolation.intValue() == 2) {
-				interpolation = Interpolation.INTERP_BILINEAR;
-			}
-		}
 		final RenderingHints scalingHints = new RenderingHints(
 				RenderingHints.KEY_RENDERING,
 				RenderingHints.VALUE_RENDER_QUALITY);
@@ -663,8 +656,7 @@ public class RasterUtils
 						new Float(
 								rescaleY),
 								0.0f,
-								0.0f,
-								Interpolation.getInstance(interpolation),
+								0.0f,interpolation,
 								scalingHints);
 
 		final WritableRaster scaledImageRaster = (WritableRaster) result.getData();

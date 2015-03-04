@@ -68,6 +68,7 @@ public class GaussianCellMapper extends
 			final int numYPosts = (int) Math.pow(
 					2,
 					level) * tileSize;
+			System.err.println("level " + level + "; numXPosts " + numXPosts + "; numYPosts " + numYPosts);
 			populateLevelStore(
 					context,
 					numXPosts,

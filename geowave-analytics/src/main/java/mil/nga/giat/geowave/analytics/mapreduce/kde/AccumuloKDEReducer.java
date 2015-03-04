@@ -178,10 +178,10 @@ public class AccumuloKDEReducer extends
 
 	private TileInfo fromCellIndexToTileInfo(
 			final long index ) {
-		final int xPost = (int) Math.floor(index / numYPosts);
+		final int xPost = (int)(index / numYPosts);
 		final int yPost = (int) (index % numYPosts);
-		final int xTile = (int) Math.floor((double) xPost / (double) tileSize);
-		final int yTile = (int) Math.floor((double) yPost / (double) tileSize);
+		final int xTile = (int) (xPost / tileSize);
+		final int yTile = yPost / tileSize;
 		final int x = (xPost % tileSize);
 		final int y = (yPost % tileSize);
 		final double tileWestLon = ((xTile * 360.0) / numXTiles) - 180.0;
@@ -195,7 +195,8 @@ public class AccumuloKDEReducer extends
 				tileNorthLat,
 				x,
 				tileSize - y - 1); // remember java rasters go from 0 at the top
-									// to (height-1) at the bottom, so we have to
+									// to (height-1) at the bottom, so we have
+									// to
 									// inverse the y here which goes from bottom
 									// to top
 	}
@@ -229,6 +230,7 @@ public class AccumuloKDEReducer extends
 				2,
 				level);
 		numYPosts = numYTiles * tileSize;
+		System.err.println("num Y posts: " + numYPosts);
 		totalKeys = context.getConfiguration().getLong(
 				"Entries per level.level" + level,
 				10);

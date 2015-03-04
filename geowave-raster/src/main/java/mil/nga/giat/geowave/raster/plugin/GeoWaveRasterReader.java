@@ -17,6 +17,7 @@ import java.util.Set;
 import javax.imageio.ImageReadParam;
 import javax.media.jai.Histogram;
 import javax.media.jai.ImageLayout;
+import javax.media.jai.Interpolation;
 
 import mil.nga.giat.geowave.accumulo.AccumuloOperations;
 import mil.nga.giat.geowave.accumulo.BasicAccumuloOperations;
@@ -79,8 +80,8 @@ import com.vividsolutions.jts.geom.GeometryFactory;
  * data adapter
  */
 public class GeoWaveRasterReader extends
-		AbstractGridCoverage2DReader implements
-		GridCoverage2DReader
+AbstractGridCoverage2DReader implements
+GridCoverage2DReader
 {
 	private final static Logger LOGGER = Logger.getLogger(GeoWaveRasterReader.class);
 
@@ -129,10 +130,10 @@ public class GeoWaveRasterReader extends
 	public GeoWaveRasterReader(
 			final Object source,
 			final Hints uHints )
-			throws IOException,
-			MalformedURLException,
-			AccumuloException,
-			AccumuloSecurityException {
+					throws IOException,
+					MalformedURLException,
+					AccumuloException,
+					AccumuloSecurityException {
 		super(
 				source,
 				uHints);
@@ -161,9 +162,9 @@ public class GeoWaveRasterReader extends
 
 	public GeoWaveRasterReader(
 			final GeoWaveRasterConfig config )
-			throws DataSourceException,
-			AccumuloException,
-			AccumuloSecurityException {
+					throws DataSourceException,
+					AccumuloException,
+					AccumuloSecurityException {
 		super(
 				new Object(),
 				new Hints());
@@ -173,8 +174,8 @@ public class GeoWaveRasterReader extends
 
 	private void init(
 			final GeoWaveRasterConfig config )
-			throws AccumuloException,
-			AccumuloSecurityException {
+					throws AccumuloException,
+					AccumuloSecurityException {
 		final AccumuloOperations accumuloOperations = new BasicAccumuloOperations(
 				config.getZookeeperUrls(),
 				config.getAccumuloInstanceId(),
@@ -207,9 +208,9 @@ public class GeoWaveRasterReader extends
 	 */
 	public GeoWaveRasterReader(
 			final Object source )
-			throws IOException,
-			AccumuloException,
-			AccumuloSecurityException {
+					throws IOException,
+					AccumuloException,
+					AccumuloSecurityException {
 		this(
 				source,
 				null);
@@ -325,7 +326,7 @@ public class GeoWaveRasterReader extends
 		final DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				BoundingBoxDataStatistics.STATS_ID);
+						BoundingBoxDataStatistics.STATS_ID);
 		// try to use both the bounding box and the overview statistics to
 		// determine the width and height at the highest resolution
 		if (statistics instanceof BoundingBoxDataStatistics) {
@@ -365,7 +366,7 @@ public class GeoWaveRasterReader extends
 		DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				BoundingBoxDataStatistics.STATS_ID);
+						BoundingBoxDataStatistics.STATS_ID);
 		int width = 0;
 		int height = 0;
 		// try to use both the bounding box and the overview statistics to
@@ -375,7 +376,7 @@ public class GeoWaveRasterReader extends
 			statistics = geowaveStatisticsStore.getDataStatistics(
 					new ByteArrayId(
 							coverageName),
-					OverviewStatistics.STATS_ID);
+							OverviewStatistics.STATS_ID);
 			if (statistics instanceof OverviewStatistics) {
 				final OverviewStatistics overviewStats = (OverviewStatistics) statistics;
 				width = (int) Math.ceil(((bboxStats.getMaxX() - bboxStats.getMinX()) / overviewStats.getResolutions()[0].getResolution(0)));
@@ -414,8 +415,8 @@ public class GeoWaveRasterReader extends
 	@Override
 	public GridCoverage2D read(
 			final GeneralParameterValue[] parameters )
-			throws IllegalArgumentException,
-			IOException {
+					throws IllegalArgumentException,
+					IOException {
 		throw new UnsupportedOperationException(
 				"A coverage name must be provided, there is no support for a default coverage");
 	}
@@ -431,7 +432,7 @@ public class GeoWaveRasterReader extends
 	public GridCoverage2D read(
 			final String coverageName,
 			final GeneralParameterValue[] params )
-			throws IOException {
+					throws IOException {
 		if (!checkName(coverageName)) {
 			LOGGER.warn("Unable to find data adapter for '" + coverageName + "'");
 			return null;
@@ -486,7 +487,7 @@ public class GeoWaveRasterReader extends
 			final GeneralEnvelope generalEnvelope,
 			Color backgroundColor,
 			Color outputTransparentColor )
-			throws IOException {
+					throws IOException {
 		if (backgroundColor == null) {
 			backgroundColor = AbstractGridFormat.BACKGROUND_COLOR.getDefaultValue();
 		}
@@ -530,7 +531,7 @@ public class GeoWaveRasterReader extends
 			final GeoWaveRasterReaderState state,
 			final CoordinateReferenceSystem crs,
 			final GeneralEnvelope originalEnvelope )
-			throws IOException {
+					throws IOException {
 		transformRequestEnvelope(
 				state,
 				crs);
@@ -569,7 +570,7 @@ public class GeoWaveRasterReader extends
 										backgroundColor,
 										outputTransparentColor,
 										adapter.getColorModel()),
-								state.getRequestedEnvelope());
+										state.getRequestedEnvelope());
 					}
 					imageChoice = setReadParams(
 							state.getCoverageName(),
@@ -598,7 +599,7 @@ public class GeoWaveRasterReader extends
 								backgroundColor,
 								outputTransparentColor,
 								adapter.getColorModel()),
-						state.getRequestedEnvelope());
+								state.getRequestedEnvelope());
 			}
 		}
 		else {
@@ -608,45 +609,60 @@ public class GeoWaveRasterReader extends
 
 		final double[][] resolutionLevels = getResolutionLevels(coverageName);
 		Histogram histogram = null;
-		if (config.isEqualizeHistogramOverride()) {
+		boolean equalizeHistogram;
+		if (config.isEqualizeHistogramOverrideSet()) {
+			equalizeHistogram = config.isEqualizeHistogramOverride();
+		}
+		else {
+			equalizeHistogram = adapter.isEqualizeHistogram();
+		}
+		if (equalizeHistogram) {
 			histogram = getHistogram(
 					coverageName,
 					resolutionLevels[imageChoice.intValue()][0],
 					resolutionLevels[imageChoice.intValue()][1]);
 		}
 
-		final CloseableIterator<GridCoverage> gridCoverageIt = queryForTiles(
+		try (final CloseableIterator<GridCoverage> gridCoverageIt = queryForTiles(
 				pixelDimension,
 				state.getRequestEnvelopeTransformed(),
 				resolutionLevels[imageChoice.intValue()][0],
 				resolutionLevels[imageChoice.intValue()][1],
-				adapter);
-		final GridCoverage2D result = RasterUtils.mosaicGridCoverages(
-				gridCoverageIt,
-				backgroundColor,
-				outputTransparentColor,
-				pixelDimension,
-				state.getRequestEnvelopeTransformed(),
-				resolutionLevels[imageChoice.intValue()][0],
-				resolutionLevels[imageChoice.intValue()][1],
-				adapter.getNoDataValuesPerBand(),
-				state.isXAxisSwitch(),
-				coverageFactory,
-				state.getCoverageName(),
-				config.getInterpolationOverride(),
-				histogram,
-				adapter.getColorModel());
+				adapter)) {
 
-		gridCoverageIt.close();
-		return transformResult(
-				result,
-				pixelDimension,
-				state);
+			Interpolation interpolation;
+			if (config.isInterpolationOverrideSet()) {
+				interpolation = config.getInterpolationOverride();
+			}
+			else {
+				interpolation = adapter.getInterpolation();
+			}
+			final GridCoverage2D result = RasterUtils.mosaicGridCoverages(
+					gridCoverageIt,
+					backgroundColor,
+					outputTransparentColor,
+					pixelDimension,
+					state.getRequestEnvelopeTransformed(),
+					resolutionLevels[imageChoice.intValue()][0],
+					resolutionLevels[imageChoice.intValue()][1],
+					adapter.getNoDataValuesPerBand(),
+					state.isXAxisSwitch(),
+					coverageFactory,
+					state.getCoverageName(),
+					interpolation,
+					histogram,
+					adapter.getColorModel());
+
+			return transformResult(
+					result,
+					pixelDimension,
+					state);
+		}
 	}
 
 	private boolean setupResolutions(
 			final String coverageName )
-			throws IOException {
+					throws IOException {
 
 		// this is a bit of a hack to avoid copy and pasting large
 		// portions of the inherited class, which does not handle
@@ -680,7 +696,7 @@ public class GeoWaveRasterReader extends
 			final double levelResX,
 			final double levelResY,
 			final RasterDataAdapter adapter )
-			throws IOException {
+					throws IOException {
 		return geowaveDataStore.query(
 				adapter,
 				rasterIndex,
@@ -690,7 +706,7 @@ public class GeoWaveRasterReader extends
 								requestEnvelope.getMaximum(0),
 								requestEnvelope.getMinimum(1),
 								requestEnvelope.getMaximum(1)))),
-				new double[] {
+								new double[] {
 					levelResX * adapter.getTileSize(),
 					levelResY * adapter.getTileSize()
 				});
@@ -726,7 +742,7 @@ public class GeoWaveRasterReader extends
 	private static void transformRequestEnvelope(
 			final GeoWaveRasterReaderState state,
 			final CoordinateReferenceSystem crs )
-			throws DataSourceException {
+					throws DataSourceException {
 
 		if (CRS.equalsIgnoreMetadata(
 				state.getRequestedEnvelope().getCoordinateReferenceSystem(),
@@ -769,12 +785,12 @@ public class GeoWaveRasterReader extends
 				final Rectangle2D tmp = new Rectangle2D.Double(
 						state.getRequestEnvelopeTransformed().getMinimum(
 								1),
-						state.getRequestEnvelopeTransformed().getMinimum(
-								0),
-						state.getRequestEnvelopeTransformed().getSpan(
-								1),
-						state.getRequestEnvelopeTransformed().getSpan(
-								0));
+								state.getRequestEnvelopeTransformed().getMinimum(
+										0),
+										state.getRequestEnvelopeTransformed().getSpan(
+												1),
+												state.getRequestEnvelopeTransformed().getSpan(
+														0));
 				state.setRequestEnvelopeTransformed(new GeneralEnvelope(
 						tmp));
 				state.getRequestEnvelopeTransformed().setCoordinateReferenceSystem(
@@ -806,7 +822,7 @@ public class GeoWaveRasterReader extends
 	@Override
 	public Set<ParameterDescriptor<List>> getDynamicParameters(
 			final String coverageName )
-			throws IOException {
+					throws IOException {
 		return Collections.emptySet();
 	}
 
@@ -814,7 +830,7 @@ public class GeoWaveRasterReader extends
 	public double[] getReadingResolutions(
 			final OverviewPolicy policy,
 			final double[] requestedResolution )
-			throws IOException {
+					throws IOException {
 		throw new UnsupportedOperationException(
 				"A coverage name must be provided, there is no support for a default coverage");
 	}
@@ -824,7 +840,7 @@ public class GeoWaveRasterReader extends
 			final String coverageName,
 			final OverviewPolicy policy,
 			final double[] requestedResolution )
-			throws IOException {
+					throws IOException {
 		synchronized (this) {
 			if (!setupResolutions(coverageName)) {
 				LOGGER.warn("Cannot find the overview statistics for the requested coverage name");
@@ -870,7 +886,7 @@ public class GeoWaveRasterReader extends
 	@Override
 	public ImageLayout getImageLayout(
 			final String coverageName )
-			throws IOException {
+					throws IOException {
 		if (!checkName(coverageName)) {
 			LOGGER.warn("Unable to find data adapter for '" + coverageName + "'");
 			return null;
@@ -881,13 +897,13 @@ public class GeoWaveRasterReader extends
 		final GridEnvelope gridEnvelope = getOriginalGridRange();
 		return new ImageLayout().setMinX(
 				gridEnvelope.getLow(0)).setMinY(
-				gridEnvelope.getLow(1)).setTileWidth(
-				adapter.getTileSize()).setTileHeight(
-				adapter.getTileSize()).setSampleModel(
-				adapter.getSampleModel()).setColorModel(
-				adapter.getColorModel()).setWidth(
-				gridEnvelope.getHigh(0)).setHeight(
-				gridEnvelope.getHigh(1));
+						gridEnvelope.getLow(1)).setTileWidth(
+								adapter.getTileSize()).setTileHeight(
+										adapter.getTileSize()).setSampleModel(
+												adapter.getSampleModel()).setColorModel(
+														adapter.getColorModel()).setWidth(
+																gridEnvelope.getHigh(0)).setHeight(
+																		gridEnvelope.getHigh(1));
 	}
 
 	@Override
@@ -900,11 +916,11 @@ public class GeoWaveRasterReader extends
 	@Override
 	public double[][] getResolutionLevels(
 			final String coverageName )
-			throws IOException {
+					throws IOException {
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				OverviewStatistics.STATS_ID);
+						OverviewStatistics.STATS_ID);
 		if ((stats != null) && (stats instanceof OverviewStatistics)) {
 			final Resolution[] resolutions = ((OverviewStatistics) stats).getResolutions();
 			final double[][] retVal = new double[resolutions.length][];
@@ -921,16 +937,16 @@ public class GeoWaveRasterReader extends
 			final String coverageName,
 			final double resX,
 			final double resY )
-			throws IOException {
+					throws IOException {
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-				HistogramStatistics.STATS_ID);
+						HistogramStatistics.STATS_ID);
 		if ((stats != null) && (stats instanceof HistogramStatistics)) {
 			return ((HistogramStatistics) stats).getHistogram(new Resolution(
 					new double[] {
-						resX,
-						resY
+							resX,
+							resY
 					}));
 		}
 		else {

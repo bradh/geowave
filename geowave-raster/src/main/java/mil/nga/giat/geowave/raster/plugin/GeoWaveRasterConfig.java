@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.Hashtable;
 import java.util.Map;
 
+import javax.media.jai.Interpolation;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -21,20 +22,20 @@ public class GeoWaveRasterConfig
 	protected static enum ConfigParameter {
 		ZOOKEEPER_URLS(
 				"zookeeperUrls"),
-		INSTANCE_ID(
-				"instanceId"),
-		USERNAME(
-				"username"),
-		PASSWORD(
-				"password"),
-		NAMESPACE(
-				"namespace"),
-		// the following two are optional parameters that will override the
-		// behavior of tile mosaicing that is already set within each adapter
-		INTERPOLATION(
-				"interpolationOverride"),
-		EQUALIZE_HISTOGRAM(
-				"equalizeHistogramOverride");
+				INSTANCE_ID(
+						"instanceId"),
+						USERNAME(
+								"username"),
+								PASSWORD(
+										"password"),
+										NAMESPACE(
+												"namespace"),
+												// the following two are optional parameters that will override the
+												// behavior of tile mosaicing that is already set within each adapter
+												INTERPOLATION(
+														"interpolationOverride"),
+														EQUALIZE_HISTOGRAM(
+																"equalizeHistogramOverride");
 		private String configName;
 
 		private ConfigParameter(
@@ -102,7 +103,7 @@ public class GeoWaveRasterConfig
 
 	public static GeoWaveRasterConfig readFrom(
 			final URL xmlURL )
-			throws Exception {
+					throws Exception {
 		GeoWaveRasterConfig result = CONFIG_CACHE.get(xmlURL.toString());
 
 		if (result != null) {
@@ -192,12 +193,13 @@ public class GeoWaveRasterConfig
 		return (interpolationOverride != null);
 	}
 
-	public int getInterpolationOverride() {
+	public Interpolation getInterpolationOverride() {
 		if (!isInterpolationOverrideSet()) {
 			throw new IllegalStateException(
 					"Interpolation Override is not set for this config");
 		}
-		return interpolationOverride;
+
+		return Interpolation.getInstance(interpolationOverride);
 	}
 
 	public boolean isEqualizeHistogramOverrideSet() {
