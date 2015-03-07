@@ -28,6 +28,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.util.ToolRunner;
 import org.geotools.geometry.GeneralEnvelope;
+import org.junit.Assert;
 import org.junit.Test;
 import org.opengis.coverage.grid.GridCoverage;
 
@@ -39,8 +40,8 @@ public class KDEMapReduceIT extends
 	private static final int MIN_TILE_SIZE_POWER_OF_2 = 0;
 	private static final int MAX_TILE_SIZE_POWER_OF_2 = 6;
 	private static final int INCREMENT = 2;
-	private static final int BASE_MIN_LEVEL = 14;
-	private static final int BASE_MAX_LEVEL = 16;
+	private static final int BASE_MIN_LEVEL = 15;
+	private static final int BASE_MAX_LEVEL = 17;
 
 	private void testIngestShp(
 			final IndexType indexType,
@@ -97,106 +98,117 @@ public class KDEMapReduceIT extends
 										i)).toString()
 					});
 		}
+		double[][][][] initialSampleValuesPerRequestSize = new double[3][][][];
+		for (int i = 0; i < 3; i++) {
+			initialSampleValuesPerRequestSize[i] = testSamplesMatch(
+					TEST_COVERAGE_NAME_PREFIX,
+					"first",
+					((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+					new Rectangle(
+							(int) (24 * Math.pow(
+									2,
+									i)),
+							(int) (24 * Math.pow(
+									2,
+									i))),
+					null);
+		}
 
-		final int[] counts1 = testCounts(
-				TEST_COVERAGE_NAME_PREFIX,
-				"first",
-				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
-				new Rectangle(
-						64,
-						64));
+		final Connector conn = ConnectorPool.getInstance().getConnector(
+				zookeeper,
+				accumuloInstance,
+				accumuloUser,
+				accumuloPassword);
+		conn.tableOperations().compact(
+				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
+				null,
+				null,
+				true,
+				true);
+		for (int i = 0; i < 3; i++) {
+			testSamplesMatch(
+					TEST_COVERAGE_NAME_PREFIX,
+					"compact",
+					((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+					new Rectangle(
+							(int) (24 * Math.pow(
+									2,
+									i)),
+							(int) (24 * Math.pow(
+									2,
+									i))),
+					initialSampleValuesPerRequestSize[i]);
+		}
+		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
+			final String originalTileSizeCoverageName = TEST_COVERAGE_NAME_PREFIX + i;
+			final String resizeTileSizeCoverageName = TEST_RESIZE_COVERAGE_NAME_PREFIX + i;
+			ToolRunner.run(
+					new RasterTileResizeJobRunner(),
+					new String[] {
+						zookeeper,
+						accumuloInstance,
+						accumuloUser,
+						accumuloPassword,
+						TEST_NAMESPACE,
+						originalTileSizeCoverageName,
+						new Integer(
+								MIN_INPUT_SPLITS).toString(),
+						new Integer(
+								MAX_INPUT_SPLITS).toString(),
+						hdfs,
+						jobtracker,
+						resizeTileSizeCoverageName,
+						TEST_NAMESPACE,
+						new Integer(
+								(int) Math.pow(
+										2,
+										MAX_TILE_SIZE_POWER_OF_2 - i)).toString()
+					});
+		}
 
-//		final Connector conn = ConnectorPool.getInstance().getConnector(
-//				zookeeper,
-//				accumuloInstance,
-//				accumuloUser,
-//				accumuloPassword);
-//		conn.tableOperations().compact(
-//				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
-//				null,
-//				null,
-//				true,
-//				true);
-//		final int[] counts2 = testCounts(
-//				TEST_COVERAGE_NAME_PREFIX,
-//				"compact",
-//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
-//				new Rectangle(
-//						256,
-//						256));
-//
-//		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
-//			final String originalTileSizeCoverageName = TEST_COVERAGE_NAME_PREFIX + i;
-//			final String resizeTileSizeCoverageName = TEST_RESIZE_COVERAGE_NAME_PREFIX + i;
-//			ToolRunner.run(
-//					new RasterTileResizeJobRunner(),
-//					new String[] {
-//						zookeeper,
-//						accumuloInstance,
-//						accumuloUser,
-//						accumuloPassword,
-//						TEST_NAMESPACE,
-//						originalTileSizeCoverageName,
-//						new Integer(
-//								MIN_INPUT_SPLITS).toString(),
-//						new Integer(
-//								MAX_INPUT_SPLITS).toString(),
-//						hdfs,
-//						jobtracker,
-//						resizeTileSizeCoverageName,
-//						TEST_NAMESPACE,
-//						new Integer(
-//								(int) Math.pow(
-//										2,
-//										MAX_TILE_SIZE_POWER_OF_2 - i)).toString()
-//					});
-//		}
-//		//
-//		final int[] counts3 = testCounts(
-//				TEST_RESIZE_COVERAGE_NAME_PREFIX,
-//				"first",
-//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
-//				new Rectangle(
-//						256,
-//						256));
-//
-//		conn.tableOperations().compact(
-//				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
-//				null,
-//				null,
-//				true,
-//				true);
-//
-//		final int[] counts4 = testCounts(
-//				TEST_RESIZE_COVERAGE_NAME_PREFIX,
-//				"compact",
-//				((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
-//				new Rectangle(
-//						256,
-//						256));
+		for (int i = 0; i < 3; i++) {
+			testSamplesMatch(
+					TEST_RESIZE_COVERAGE_NAME_PREFIX,
+					"first",
+					((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+					new Rectangle(
+							(int) (24 * Math.pow(
+									2,
+									i)),
+							(int) (24 * Math.pow(
+									2,
+									i))),
+					initialSampleValuesPerRequestSize[i]);
+		}
 
-		System.err.println("testing kde");
-		for (int i = 0; i < counts1.length; i++) {
-			System.err.println("counts[" + i + "]:" + counts1[i]);
-		}	System.err.println("testing kde after compaction");
-//		for (int i = 0; i < counts2.length; i++) {
-//			System.err.println("counts[" + i + "]:" + counts2[i]);
-//		}
-//		System.err.println("testing resize");
-//		for (int i = 0; i < counts3.length; i++) {
-//			System.err.println("counts[" + i + "]:" + counts3[i]);
-//		}
-//		System.err.println("testing resize after compaction");
-//		for (int i = 0; i < counts4.length; i++) {
-//			System.err.println("counts[" + i + "]:" + counts4[i]);
-//		}
+		conn.tableOperations().compact(
+				TEST_NAMESPACE + "_" + IndexType.SPATIAL_RASTER.createDefaultIndex().getId().getString(),
+				null,
+				null,
+				true,
+				true);
+		for (int i = 0; i < 3; i++) {
+			testSamplesMatch(
+					TEST_RESIZE_COVERAGE_NAME_PREFIX,
+					"compact",
+					((MAX_TILE_SIZE_POWER_OF_2 - MIN_TILE_SIZE_POWER_OF_2) / INCREMENT) + 1,
+					new Rectangle(
+							(int) (24 * Math.pow(
+									2,
+									i)),
+							(int) (24 * Math.pow(
+									2,
+									i))),
+					initialSampleValuesPerRequestSize[i]);
+		}
 	}
 
-	private static int[] testCounts(
+	private static double[][][] testSamplesMatch(
 			final String coverageNamePrefix,
 			final String after,
 			final int numCoverages,
-			final Rectangle pixelDimensions )
+			final Rectangle pixelDimensions,
+			double[][][] expectedResults )
 			throws IOException,
 			AccumuloException,
 			AccumuloSecurityException {
@@ -211,42 +223,23 @@ public class KDEMapReduceIT extends
 						Interpolation.INTERP_NEAREST));
 		final GeneralEnvelope queryEnvelope = new GeneralEnvelope(
 				new double[] {
-					// -71.12,
-//						52.5421142578125,
-//						29.608154296875
-					52.5,
-					// 42.38
-					29.58
-				// -72,
-				// 42
+					// this is exactly on a tile boundary, so there will be no
+					// scaling on the tile composition/rendering
+					52.49267578125,
+					29.55322265625
 				},
 				new double[] {
-					// -71.07,
-//						52.547607421875,
-//						29.6136474609375
-					52.57,
-					29.65
-				// 42.4
-				// -71,
-				// 43
+					// these values are also on a tile boundary, to avoid
+					// scaling
+					52.62451171875,
+					29.68505859375
 				});
 
-		// final GeneralEnvelope queryEnvelope = new GeneralEnvelope(
-		// new double[] {
-		// -71.3,
-		// 42.05
-		// },
-		// new double[] {
-		// -71.27,
-		// 42.07
-		// });
 		queryEnvelope.setCoordinateReferenceSystem(GeoWaveGTRasterFormat.DEFAULT_CRS);
 		final Raster[] rasters = new Raster[numCoverages];
-		final int[] counts = new int[numCoverages];
 		int coverageCount = 0;
 		for (int i = MIN_TILE_SIZE_POWER_OF_2; i <= MAX_TILE_SIZE_POWER_OF_2; i += INCREMENT) {
 			final String tileSizeCoverageName = coverageNamePrefix + i;
-			RasterUtils.COVERAGE_NAME = coverageNamePrefix + "_" +after + "_" + i + "_";
 			final GridCoverage gridCoverage = reader.renderGridCoverage(
 					tileSizeCoverageName,
 					pixelDimensions,
@@ -261,7 +254,7 @@ public class KDEMapReduceIT extends
 			dir.mkdirs();
 			final File f = new File(
 					dir,
-					coverageNamePrefix + "_" +after + "_" + i + ".png");
+					coverageNamePrefix + "_" + after + "_" + i + ".png");
 			f.delete();
 			f.createNewFile();
 			final BufferedImage heatmap = new BufferedImage(
@@ -296,7 +289,24 @@ public class KDEMapReduceIT extends
 					f);
 		}
 		for (int i = 0; i < numCoverages; i++) {
-			counts[i] = 0;
+			final boolean initialResults = expectedResults == null;
+			if (initialResults) {
+				expectedResults = new double[rasters[i].getWidth()][rasters[i].getHeight()][rasters[i].getNumBands()];
+			}
+			else {
+				Assert.assertEquals(
+						"The expected width does not match the expected width for the coverage " + i,
+						expectedResults.length,
+						rasters[i].getWidth());
+				Assert.assertEquals(
+						"The expected height does not match the expected height for the coverage " + i,
+						expectedResults[0].length,
+						rasters[i].getHeight());
+				Assert.assertEquals(
+						"The expected number of bands does not match the expected bands for the coverage " + i,
+						expectedResults[0][0].length,
+						rasters[i].getNumBands());
+			}
 			for (int x = 0; x < rasters[i].getWidth(); x++) {
 				for (int y = 0; y < rasters[i].getHeight(); y++) {
 					for (int b = 0; b < rasters[i].getNumBands(); b++) {
@@ -304,8 +314,16 @@ public class KDEMapReduceIT extends
 								x,
 								y,
 								b);
-						if (!Double.isNaN(sample)) {
-							counts[i]++;
+						if (initialResults) {
+							expectedResults[x][y][b] = sample;
+						}
+						else {
+							Assert.assertEquals(
+									"The sample does not match the expected sample value for the coverage " + i + " at x=" + x + ",y=" + y + ",b=" + b,
+									new Double(
+											expectedResults[x][y][b]),
+									new Double(
+											sample));
 						}
 					}
 				}
@@ -319,6 +337,6 @@ public class KDEMapReduceIT extends
 		// counts[0],
 		// counts[i]);
 		// }
-		return counts;
+		return expectedResults;
 	}
 }

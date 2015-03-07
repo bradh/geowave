@@ -93,7 +93,6 @@ public class RasterUtils
 			final ReferencedEnvelope projectedReferenceEnvelope,
 			final GridCoverage gridCoverage ) {
 		try {
-
 			final Envelope sampleEnvelope = gridCoverage.getEnvelope();
 			final double avgSpan = (projectedReferenceEnvelope.getSpan(0) + projectedReferenceEnvelope.getSpan(1)) / 2;
 
@@ -389,8 +388,6 @@ public class RasterUtils
 		}
 	}
 
-	public static String COVERAGE_NAME = "";
-
 	public static GridCoverage2D mosaicGridCoverages(
 			final Iterator<GridCoverage> gridCoverages,
 			final Color backgroundColor,
@@ -417,7 +414,7 @@ public class RasterUtils
 		final int imageHeight = (int) Math.max(
 				Math.round(height),
 				1);
-
+		System.err.println(rescaleX + " " + rescaleY + " " + width + " " + height);
 		BufferedImage image = null;
 
 		while (gridCoverages.hasNext()) {
@@ -439,56 +436,7 @@ public class RasterUtils
 					posx,
 					posy,
 					coverageImage.getData());
-//			if (COVERAGE_NAME.equals("TEST_RESIZE_2_")){
-			final Raster raster = coverageImage.getData();
-			final File dir = new File(
-					"C:\\Temp\\kde_test13");
-			dir.mkdirs();
-				
-			final File f = new File(
-					dir,
-					COVERAGE_NAME + posx+"_" +posy + "_" + coverageEnv.getMinimum(0) + "_" + coverageEnv.getMaximum(0) + "_" + coverageEnv.getMinimum(1) + "_" + coverageEnv.getMaximum(1) + ".png");
-			f.delete();
-			try {
-				f.createNewFile();
-
-				final BufferedImage heatmap = new BufferedImage(
-						raster.getWidth(),
-						raster.getHeight(),
-						BufferedImage.TYPE_BYTE_GRAY);
-				final Graphics g = heatmap.createGraphics();
-				for (int x = 0; x < raster.getWidth(); x++) {
-					for (int y = 0; y < raster.getHeight(); y++) {
-						final double sample = raster.getSampleDouble(
-								x,
-								y,
-								2);
-						if (!Double.isNaN(sample)) {
-							g.setColor(new Color(
-									(float) sample,
-									(float) sample,
-									(float) sample));
-							g.fillRect(
-									x,
-									y,
-									1,
-									1);
-						}
-					}
-				}
-				heatmap.flush();
-				ImageIO.write(
-						heatmap,
-						"png",
-						f);
-			}
-			catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			}
-//		}
-
+		}
 		if (image == null) {
 			image = getEmptyImage(
 					imageWidth,
@@ -915,8 +863,8 @@ public class RasterUtils
 					Errors.format(
 							ErrorKeys.NUMBER_OF_BANDS_MISMATCH_$3,
 							numBands,
-							min.length,
-							"min[i]"));
+							name.length,
+							"name[i]"));
 		}
 		if ((max != null) && (max.length != numBands)) {
 			throw new IllegalArgumentException(

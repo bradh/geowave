@@ -80,8 +80,8 @@ import com.vividsolutions.jts.geom.GeometryFactory;
  * data adapter
  */
 public class GeoWaveRasterReader extends
-AbstractGridCoverage2DReader implements
-GridCoverage2DReader
+		AbstractGridCoverage2DReader implements
+		GridCoverage2DReader
 {
 	private final static Logger LOGGER = Logger.getLogger(GeoWaveRasterReader.class);
 
@@ -130,10 +130,10 @@ GridCoverage2DReader
 	public GeoWaveRasterReader(
 			final Object source,
 			final Hints uHints )
-					throws IOException,
-					MalformedURLException,
-					AccumuloException,
-					AccumuloSecurityException {
+			throws IOException,
+			MalformedURLException,
+			AccumuloException,
+			AccumuloSecurityException {
 		super(
 				source,
 				uHints);
@@ -162,9 +162,9 @@ GridCoverage2DReader
 
 	public GeoWaveRasterReader(
 			final GeoWaveRasterConfig config )
-					throws DataSourceException,
-					AccumuloException,
-					AccumuloSecurityException {
+			throws DataSourceException,
+			AccumuloException,
+			AccumuloSecurityException {
 		super(
 				new Object(),
 				new Hints());
@@ -174,8 +174,8 @@ GridCoverage2DReader
 
 	private void init(
 			final GeoWaveRasterConfig config )
-					throws AccumuloException,
-					AccumuloSecurityException {
+			throws AccumuloException,
+			AccumuloSecurityException {
 		final AccumuloOperations accumuloOperations = new BasicAccumuloOperations(
 				config.getZookeeperUrls(),
 				config.getAccumuloInstanceId(),
@@ -208,9 +208,9 @@ GridCoverage2DReader
 	 */
 	public GeoWaveRasterReader(
 			final Object source )
-					throws IOException,
-					AccumuloException,
-					AccumuloSecurityException {
+			throws IOException,
+			AccumuloException,
+			AccumuloSecurityException {
 		this(
 				source,
 				null);
@@ -326,7 +326,7 @@ GridCoverage2DReader
 		final DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-						BoundingBoxDataStatistics.STATS_ID);
+				BoundingBoxDataStatistics.STATS_ID);
 		// try to use both the bounding box and the overview statistics to
 		// determine the width and height at the highest resolution
 		if (statistics instanceof BoundingBoxDataStatistics) {
@@ -366,7 +366,7 @@ GridCoverage2DReader
 		DataStatistics<?> statistics = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-						BoundingBoxDataStatistics.STATS_ID);
+				BoundingBoxDataStatistics.STATS_ID);
 		int width = 0;
 		int height = 0;
 		// try to use both the bounding box and the overview statistics to
@@ -376,7 +376,7 @@ GridCoverage2DReader
 			statistics = geowaveStatisticsStore.getDataStatistics(
 					new ByteArrayId(
 							coverageName),
-							OverviewStatistics.STATS_ID);
+					OverviewStatistics.STATS_ID);
 			if (statistics instanceof OverviewStatistics) {
 				final OverviewStatistics overviewStats = (OverviewStatistics) statistics;
 				width = (int) Math.ceil(((bboxStats.getMaxX() - bboxStats.getMinX()) / overviewStats.getResolutions()[0].getResolution(0)));
@@ -415,15 +415,15 @@ GridCoverage2DReader
 	@Override
 	public GridCoverage2D read(
 			final GeneralParameterValue[] parameters )
-					throws IllegalArgumentException,
-					IOException {
+			throws IllegalArgumentException,
+			IOException {
 		throw new UnsupportedOperationException(
 				"A coverage name must be provided, there is no support for a default coverage");
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.opengis.coverage.grid.GridCoverageReader#read(org.opengis.parameter
 	 * .GeneralParameterValue [])
@@ -432,7 +432,7 @@ GridCoverage2DReader
 	public GridCoverage2D read(
 			final String coverageName,
 			final GeneralParameterValue[] params )
-					throws IOException {
+			throws IOException {
 		if (!checkName(coverageName)) {
 			LOGGER.warn("Unable to find data adapter for '" + coverageName + "'");
 			return null;
@@ -487,7 +487,7 @@ GridCoverage2DReader
 			final GeneralEnvelope generalEnvelope,
 			Color backgroundColor,
 			Color outputTransparentColor )
-					throws IOException {
+			throws IOException {
 		if (backgroundColor == null) {
 			backgroundColor = AbstractGridFormat.BACKGROUND_COLOR.getDefaultValue();
 		}
@@ -531,7 +531,7 @@ GridCoverage2DReader
 			final GeoWaveRasterReaderState state,
 			final CoordinateReferenceSystem crs,
 			final GeneralEnvelope originalEnvelope )
-					throws IOException {
+			throws IOException {
 		transformRequestEnvelope(
 				state,
 				crs);
@@ -570,7 +570,7 @@ GridCoverage2DReader
 										backgroundColor,
 										outputTransparentColor,
 										adapter.getColorModel()),
-										state.getRequestedEnvelope());
+								state.getRequestedEnvelope());
 					}
 					imageChoice = setReadParams(
 							state.getCoverageName(),
@@ -599,7 +599,7 @@ GridCoverage2DReader
 								backgroundColor,
 								outputTransparentColor,
 								adapter.getColorModel()),
-								state.getRequestedEnvelope());
+						state.getRequestedEnvelope());
 			}
 		}
 		else {
@@ -662,7 +662,7 @@ GridCoverage2DReader
 
 	private boolean setupResolutions(
 			final String coverageName )
-					throws IOException {
+			throws IOException {
 
 		// this is a bit of a hack to avoid copy and pasting large
 		// portions of the inherited class, which does not handle
@@ -696,7 +696,7 @@ GridCoverage2DReader
 			final double levelResX,
 			final double levelResY,
 			final RasterDataAdapter adapter )
-					throws IOException {
+			throws IOException {
 		return geowaveDataStore.query(
 				adapter,
 				rasterIndex,
@@ -706,7 +706,7 @@ GridCoverage2DReader
 								requestEnvelope.getMaximum(0),
 								requestEnvelope.getMinimum(1),
 								requestEnvelope.getMaximum(1)))),
-								new double[] {
+				new double[] {
 					levelResX * adapter.getTileSize(),
 					levelResY * adapter.getTileSize()
 				});
@@ -742,7 +742,7 @@ GridCoverage2DReader
 	private static void transformRequestEnvelope(
 			final GeoWaveRasterReaderState state,
 			final CoordinateReferenceSystem crs )
-					throws DataSourceException {
+			throws DataSourceException {
 
 		if (CRS.equalsIgnoreMetadata(
 				state.getRequestedEnvelope().getCoordinateReferenceSystem(),
@@ -785,12 +785,12 @@ GridCoverage2DReader
 				final Rectangle2D tmp = new Rectangle2D.Double(
 						state.getRequestEnvelopeTransformed().getMinimum(
 								1),
-								state.getRequestEnvelopeTransformed().getMinimum(
-										0),
-										state.getRequestEnvelopeTransformed().getSpan(
-												1),
-												state.getRequestEnvelopeTransformed().getSpan(
-														0));
+						state.getRequestEnvelopeTransformed().getMinimum(
+								0),
+						state.getRequestEnvelopeTransformed().getSpan(
+								1),
+						state.getRequestEnvelopeTransformed().getSpan(
+								0));
 				state.setRequestEnvelopeTransformed(new GeneralEnvelope(
 						tmp));
 				state.getRequestEnvelopeTransformed().setCoordinateReferenceSystem(
@@ -822,7 +822,7 @@ GridCoverage2DReader
 	@Override
 	public Set<ParameterDescriptor<List>> getDynamicParameters(
 			final String coverageName )
-					throws IOException {
+			throws IOException {
 		return Collections.emptySet();
 	}
 
@@ -830,7 +830,7 @@ GridCoverage2DReader
 	public double[] getReadingResolutions(
 			final OverviewPolicy policy,
 			final double[] requestedResolution )
-					throws IOException {
+			throws IOException {
 		throw new UnsupportedOperationException(
 				"A coverage name must be provided, there is no support for a default coverage");
 	}
@@ -840,7 +840,7 @@ GridCoverage2DReader
 			final String coverageName,
 			final OverviewPolicy policy,
 			final double[] requestedResolution )
-					throws IOException {
+			throws IOException {
 		synchronized (this) {
 			if (!setupResolutions(coverageName)) {
 				LOGGER.warn("Cannot find the overview statistics for the requested coverage name");
@@ -886,7 +886,7 @@ GridCoverage2DReader
 	@Override
 	public ImageLayout getImageLayout(
 			final String coverageName )
-					throws IOException {
+			throws IOException {
 		if (!checkName(coverageName)) {
 			LOGGER.warn("Unable to find data adapter for '" + coverageName + "'");
 			return null;
@@ -897,13 +897,13 @@ GridCoverage2DReader
 		final GridEnvelope gridEnvelope = getOriginalGridRange();
 		return new ImageLayout().setMinX(
 				gridEnvelope.getLow(0)).setMinY(
-						gridEnvelope.getLow(1)).setTileWidth(
-								adapter.getTileSize()).setTileHeight(
-										adapter.getTileSize()).setSampleModel(
-												adapter.getSampleModel()).setColorModel(
-														adapter.getColorModel()).setWidth(
-																gridEnvelope.getHigh(0)).setHeight(
-																		gridEnvelope.getHigh(1));
+				gridEnvelope.getLow(1)).setTileWidth(
+				adapter.getTileSize()).setTileHeight(
+				adapter.getTileSize()).setSampleModel(
+				adapter.getSampleModel()).setColorModel(
+				adapter.getColorModel()).setWidth(
+				gridEnvelope.getHigh(0)).setHeight(
+				gridEnvelope.getHigh(1));
 	}
 
 	@Override
@@ -916,11 +916,11 @@ GridCoverage2DReader
 	@Override
 	public double[][] getResolutionLevels(
 			final String coverageName )
-					throws IOException {
+			throws IOException {
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-						OverviewStatistics.STATS_ID);
+				OverviewStatistics.STATS_ID);
 		if ((stats != null) && (stats instanceof OverviewStatistics)) {
 			final Resolution[] resolutions = ((OverviewStatistics) stats).getResolutions();
 			final double[][] retVal = new double[resolutions.length][];
@@ -937,16 +937,16 @@ GridCoverage2DReader
 			final String coverageName,
 			final double resX,
 			final double resY )
-					throws IOException {
+			throws IOException {
 		final DataStatistics<?> stats = geowaveStatisticsStore.getDataStatistics(
 				new ByteArrayId(
 						coverageName),
-						HistogramStatistics.STATS_ID);
+				HistogramStatistics.STATS_ID);
 		if ((stats != null) && (stats instanceof HistogramStatistics)) {
 			return ((HistogramStatistics) stats).getHistogram(new Resolution(
 					new double[] {
-							resX,
-							resY
+						resX,
+						resY
 					}));
 		}
 		else {

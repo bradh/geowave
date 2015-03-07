@@ -102,9 +102,9 @@ public class AccumuloKDEReducer extends
 		1,
 		1
 	};
-	private long totalKeys = 0;
 	private double max = -Double.MAX_VALUE;
-	private double inc = 0;
+	private long currentKey = 0;
+	private long totalKeys;
 
 	private int minLevels;
 	private int maxLevels;
@@ -132,6 +132,9 @@ public class AccumuloKDEReducer extends
 		else {
 			final double value = key.get();
 			final double normalizedValue = value / max;
+			// for consistency give all cells with matching weight the same
+			// percentile
+			final double percentile = (currentKey + 1.0) / totalKeys;
 			// calculate weights for this key
 			for (final LongWritable v : values) {
 				final long cellIndex = v.get() / numLevels;
@@ -149,13 +152,12 @@ public class AccumuloKDEReducer extends
 						tileInfo.y,
 						1,
 						normalizedValue);
-				inc += (1.0 / totalKeys);
 
 				raster.setSample(
 						tileInfo.x,
 						tileInfo.y,
 						2,
-						inc);
+						percentile);
 				context.write(
 						new GeoWaveOutputKey(
 								new ByteArrayId(
@@ -172,15 +174,16 @@ public class AccumuloKDEReducer extends
 								MAXES_PER_BAND,
 								NAME_PER_BAND,
 								raster));
+				currentKey++;
 			}
 		}
 	}
 
 	private TileInfo fromCellIndexToTileInfo(
 			final long index ) {
-		final int xPost = (int)(index / numYPosts);
+		final int xPost = (int) (index / numYPosts);
 		final int yPost = (int) (index % numYPosts);
-		final int xTile = (int) (xPost / tileSize);
+		final int xTile = xPost / tileSize;
 		final int yTile = yPost / tileSize;
 		final int x = (xPost % tileSize);
 		final int y = (yPost % tileSize);
@@ -195,10 +198,10 @@ public class AccumuloKDEReducer extends
 				tileNorthLat,
 				x,
 				tileSize - y - 1); // remember java rasters go from 0 at the top
-									// to (height-1) at the bottom, so we have
-									// to
-									// inverse the y here which goes from bottom
-									// to top
+		// to (height-1) at the bottom, so we have
+		// to
+		// inverse the y here which goes from bottom
+		// to top
 	}
 
 	@Override
@@ -230,7 +233,7 @@ public class AccumuloKDEReducer extends
 				2,
 				level);
 		numYPosts = numYTiles * tileSize;
-		System.err.println("num Y posts: " + numYPosts);
+
 		totalKeys = context.getConfiguration().getLong(
 				"Entries per level.level" + level,
 				10);
