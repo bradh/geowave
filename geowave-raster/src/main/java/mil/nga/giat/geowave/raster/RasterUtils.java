@@ -414,7 +414,6 @@ public class RasterUtils
 		final int imageHeight = (int) Math.max(
 				Math.round(height),
 				1);
-		System.err.println(rescaleX + " " + rescaleY + " " + width + " " + height);
 		BufferedImage image = null;
 
 		while (gridCoverages.hasNext()) {

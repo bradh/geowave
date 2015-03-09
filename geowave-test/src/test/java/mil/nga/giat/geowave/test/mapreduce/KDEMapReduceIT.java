@@ -99,7 +99,7 @@ public class KDEMapReduceIT extends
 					});
 		}
 		double[][][][] initialSampleValuesPerRequestSize = new double[3][][][];
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 2; i++) {
 			initialSampleValuesPerRequestSize[i] = testSamplesMatch(
 					TEST_COVERAGE_NAME_PREFIX,
 					"first",
@@ -125,7 +125,7 @@ public class KDEMapReduceIT extends
 				null,
 				true,
 				true);
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 2; i++) {
 			testSamplesMatch(
 					TEST_COVERAGE_NAME_PREFIX,
 					"compact",
@@ -166,7 +166,7 @@ public class KDEMapReduceIT extends
 					});
 		}
 
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 2; i++) {
 			testSamplesMatch(
 					TEST_RESIZE_COVERAGE_NAME_PREFIX,
 					"first",
@@ -187,7 +187,7 @@ public class KDEMapReduceIT extends
 				null,
 				true,
 				true);
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 2; i++) {
 			testSamplesMatch(
 					TEST_RESIZE_COVERAGE_NAME_PREFIX,
 					"compact",
@@ -331,7 +331,7 @@ public class KDEMapReduceIT extends
 		}
 		// make sure all of the counts are the same before and after compaction
 		// for (int i = 1; i < counts.length; i++) {
-		// Assert.assertEquals(
+		// Assert.assertEquals('
 		// "The count of non-nodata values is different between the 1 pixel KDE and the 2^"
 		// + i + " pixel KDE",
 		// counts[0],
