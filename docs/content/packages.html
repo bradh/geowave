@@ -62,7 +62,7 @@
                         <pre>
 
         rpm -Uvh http://s3.amazonaws.com/geowave-rpms/release/noarch/geowave-repo-1.0-3.noarch.rpm
-        yum --enablerepo=geowave search geowave
+        yum --enablerepo=geowave search geowave-$VERSION-$VENDOR (example: geowave-0.8.7-cdh5)
                         </pre>
                                 <br/>
                                 <p>
@@ -81,8 +81,8 @@
                                         This package installs the GeoWave documentation
                                     </li>
                                     <li>
-                                        <b>geowave-*-ingest</b><br/>
-                                        This package installs the GeoWave ingest tool
+                                        <b>geowave-*-tools</b><br/>
+                                        This package installs the GeoWave command line tools (ingest, stats etc.)
                                     </li>
                                     <li>
                                         <b>geowave-*-jetty</b><br/>
@@ -214,7 +214,7 @@
                     if (fileSize !== '0' && !isInSkipList(fileName, _skipList)) {
                         if(startsWith(fileName, eventHash.substring(1))) {
                             buffer.push([
-                                '<a href="' + fileName + '" download="' + baseName(fileName)  + '" target="_blank">' + baseName(fileName) + '</a>',
+                                '<a href="' + _url + fileName + '" download="' + baseName(fileName)  + '" target="_blank">' + baseName(fileName) + '</a>',
                                 $(this).find('LastModified').text(),
                                 filesize($(this).find('Size').text())
                             ]);
@@ -246,7 +246,7 @@
         var currentTab, REFRESH_INTERVAL = 900000;
 
         var list = new S3List({
-            url: 'http://s3.amazonaws.com/geowave-rpms/',
+            url: '//s3.amazonaws.com/geowave-rpms/',
             list: ['repodata', '.html'],
             cache: REFRESH_INTERVAL - 1
         });

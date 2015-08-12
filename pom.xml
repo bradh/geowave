@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>mil.nga.giat</groupId>
 	<artifactId>geowave-parent</artifactId>
-	<version>0.8.4-SNAPSHOT</version>
-	<name>geowave-parent</name>
+	<version>0.8.9-SNAPSHOT</version>
+	<name>GeoWave Parent POM</name>
 	<packaging>pom</packaging>
 	<description>Geowave adds spatio-temporal indexing to accumulo through geotools and geoserver</description>
 	<url>https://github.com/ngageoint/geowave</url>
@@ -15,23 +15,37 @@
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 		</license>
 	</licenses>
+	<distributionManagement>
+		<repository>
+			<id>geowave-maven-releases</id>
+			<name>GeoWave AWS Release Repository</name>
+			<url>s3://geowave-maven/release</url>
+		</repository>
+		<snapshotRepository>
+			<id>geowave-maven-snapshots</id>
+			<name>GeoWave AWS Snapshot Repository</name>
+			<url>s3://geowave-maven/snapshot</url>
+		</snapshotRepository>
+	</distributionManagement>
 	<scm>
 		<url>https://github.com/ngageoint/geowave.git</url>
 		<connection>scm:git:git@github.com:ngageoint/geowave.git</connection>
 	</scm>
-
 	<properties>
-		<geotools.version>12.1</geotools.version>
-		<hadoop.env.classifier>hadoop2</hadoop.env.classifier>		
-		<geoserver.version>2.6.1</geoserver.version>
-		<accumulo.version>1.6.1</accumulo.version>
+		<geotools.version>13.2</geotools.version>
+		<hadoop.env.classifier>hadoop2</hadoop.env.classifier>
+		<geoserver.version>2.7.2</geoserver.version>
+		<accumulo.version>1.6.2</accumulo.version>
 		<hadoop.version>2.6.0</hadoop.version>
 		<avro.version>1.7.6</avro.version>
 		<commons.cli.version>1.2</commons.cli.version>
 		<geotools.scope>compile</geotools.scope>
 		<accumulo.scope>compile</accumulo.scope>
 		<hadoop.scope>compile</hadoop.scope>
-                <zookeeper.version>3.4.6</zookeeper.version>
+		<zookeeper.version>3.4.6</zookeeper.version>
+		<jersey.version>2.14</jersey.version>
+		<kafka.artifact>kafka_2.10</kafka.artifact>
+		<kafka.version>0.8.2.1</kafka.version>				
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<sonar.language>java</sonar.language>
@@ -41,16 +55,21 @@
 		<jacoco.ut.reportPath>${project.build.directory}/coverage-reports/jacoco-ut.exec</jacoco.ut.reportPath>
 		<it.reportPath>${project.reporting.outputDirectory}/jacoco-it</it.reportPath>
 		<ut.reportPath>${project.reporting.outputDirectory}/jacoco-ut</ut.reportPath>
-		<jacoco.version>0.7.2.201409121644</jacoco.version>
+		<sonar.jacoco.reportPath>${ut.reportPath}</sonar.jacoco.reportPath>
+		<sonar.jacoco.itReportPath>${it.reportPath}</sonar.jacoco.itReportPath>
+		<jacoco.version>0.7.4.201502262128</jacoco.version>
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
 		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
 		<test.args>-Xms256m -Xmx1024m -XX:MaxPermSize=256m</test.args>
-		<formatter.location>${project.basedir}/../tools/eclipse/eclipse-formatter.xml</formatter.location>
-        <findbugs.version>3.0.0</findbugs.version>
+		<findbugs.version>3.0.1</findbugs.version>
+		<findbugs.omitVisitors>MutableStaticFields,FindReturnRef</findbugs.omitVisitors>
+		<findbugs.effort>Max</findbugs.effort>
+		<findbugs.threshold>Medium</findbugs.threshold>
+		<findbugs.failOnError>true</findbugs.failOnError>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
-                        <dependency>
+			<dependency>
 				<groupId>org.apache.zookeeper</groupId>
 				<artifactId>zookeeper</artifactId>
 				<version>${zookeeper.version}</version>
@@ -83,6 +102,11 @@
 				<version>1.1</version>
 			</dependency>
 			<dependency>
+				<groupId>com.vividsolutions</groupId>
+				<artifactId>jts</artifactId>
+				<version>1.13</version>
+			</dependency>
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
 				<version>1.6.1</version>
@@ -91,6 +115,11 @@
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-log4j12</artifactId>
 				<version>1.6.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.1</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.guava</groupId>
@@ -107,6 +136,23 @@
 				<artifactId>accumulo-core</artifactId>
 				<version>${accumulo.version}</version>
 				<scope>${accumulo.scope}</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.accumulo</groupId>
+				<artifactId>accumulo-server</artifactId>
+				<version>${accumulo.version}</version>
+				<scope>${accumulo.scope}</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.accumulo</groupId>
+				<artifactId>accumulo-monitor</artifactId>
+				<version>${accumulo.version}</version>
+				<scope>${accumulo.scope}</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.accumulo</groupId>
+				<artifactId>accumulo-minicluster</artifactId>
+				<version>${accumulo.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.hadoop</groupId>
@@ -202,15 +248,47 @@
 				<version>${avro.version}</version>
 				<classifier>hadoop2</classifier>
 			</dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <version>${findbugs.version}</version>
-                <scope>compile</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+			<dependency>
+				<groupId>com.google.code.findbugs</groupId>
+				<artifactId>annotations</artifactId>
+				<version>3.0.0</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.media</groupId>
+				<artifactId>jersey-media-multipart</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.core</groupId>
+				<artifactId>jersey-client</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.containers</groupId>
+				<artifactId>jersey-container-servlet</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.media</groupId>
+				<artifactId>jersey-media-json-jackson</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.ext</groupId>
+				<artifactId>jersey-proxy-client</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
+		<extensions>
+			<extension>
+				<groupId>org.springframework.build</groupId>
+				<artifactId>aws-maven</artifactId>
+				<version>5.0.0.RELEASE</version>
+			</extension>
+		</extensions>
 		<pluginManagement>
 			<plugins>
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
@@ -239,18 +317,130 @@
 										<ignore />
 									</action>
 								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.googlecode.maven-java-formatter-plugin
+										</groupId>
+										<artifactId>
+											maven-java-formatter-plugin
+										</artifactId>
+										<versionRange>
+											[0.4,)
+										</versionRange>
+										<goals>
+											<goal>format</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.sonatype.plugins
+										</groupId>
+										<artifactId>
+											munge-maven-plugin
+										</artifactId>
+										<versionRange>
+											[1.0,)
+										</versionRange>
+										<goals>
+											<goal>munge</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.avro</groupId>
+										<artifactId>avro-maven-plugin</artifactId>
+										<versionRange>[1.7.6,)</versionRange>
+										<goals>
+											<goal>schema</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<execute />
+									</action>
+								</pluginExecution>
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
 				</plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>${findbugs.version}</version>
-                </plugin>
- 			</plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>findbugs-maven-plugin</artifactId>
+					<version>${findbugs.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.avro</groupId>
+					<artifactId>avro-maven-plugin</artifactId>
+					<version>${avro.version}</version>
+					<executions>
+						<execution>
+							<phase>generate-sources</phase>
+							<goals>
+								<goal>schema</goal>
+							</goals>
+							<configuration>
+								<sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+								<outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>org.codehaus.gmavenplus</groupId>
+				<artifactId>gmavenplus-plugin</artifactId>
+				<version>1.4</version>
+				<inherited>false</inherited>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<scripts>
+						<script><![CDATA[
+			                import org.apache.maven.plugin.MojoExecutionException
+			                if (System.properties["accumulo.version"]){
+			                    String accumVer = System.properties["accumulo.version"]
+			                    if (accumVer.substring(0,3) == "1.5"){
+			                       if (!System.properties["accumulo.legacy"])
+			                          throw new MojoExecutionException("Error: When defining -Daccumulo.version=" + accumVer + ", you must also define -Daccumulo.legacy")
+			                    }
+			                    else {
+			                       if (System.properties["accumulo.legacy"])
+			                          throw new MojoExecutionException("Error: When defining -Daccumulo.version=" + accumVer + ", you should not define -Daccumulo.legacy")
+			                    }
+			                }
+			                else {
+			                    if (System.properties["accumulo.legacy"])
+			                        throw new MojoExecutionException("Error: For default builds, you should not define -Daccumulo.legacy")
+			                }
+                    ]]></script>
+					</scripts>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-all</artifactId>
+						<version>1.5.0</version>
+						<scope>runtime</scope>
+					</dependency>
+				</dependencies>
+			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -262,6 +452,9 @@
 							<goal>prepare-agent</goal>
 						</goals>
 						<configuration>
+							<includes>
+								<include>mil/nga/giat/geowave/**</include>
+							</includes>
 							<destFile>${jacoco.ut.reportPath}</destFile>
 							<propertyName>jacoco.surefire.argline</propertyName>
 						</configuration>
@@ -284,6 +477,9 @@
 							<goal>prepare-agent</goal>
 						</goals>
 						<configuration>
+							<includes>
+								<include>mil/nga/giat/geowave/**</include>
+							</includes>
 							<destFile>${jacoco.it.reportPath}</destFile>
 							<propertyName>jacoco.failsafe.argline</propertyName>
 						</configuration>
@@ -292,11 +488,11 @@
 						<id>post-integration-test</id>
 						<phase>post-integration-test</phase>
 						<goals>
-							<goal>report</goal>
+							<goal>report-integration</goal>
 						</goals>
 						<configuration>
 							<dataFile>${jacoco.it.reportPath}</dataFile>
-							<outputDirectory>${ut.reportPath}</outputDirectory>
+							<outputDirectory>${it.reportPath}</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
@@ -313,7 +509,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>
-				<version>2.1</version>
+				<version>2.5</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -323,6 +519,7 @@
 					<argLine>${test.args} ${jacoco.surefire.argline}</argLine>
 					<excludes>
 						<exclude>**IT.java</exclude>
+						<exclude>**/*ITSuite.java</exclude>
 					</excludes>
 				</configuration>
 			</plugin>
@@ -330,6 +527,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.9.1</version>
+				<configuration>
+					<notimestamp>true</notimestamp>
+				</configuration>
 				<executions>
 					<execution>
 						<id>aggregate</id>
@@ -341,33 +541,58 @@
 							<sourceFileIncludes>
 								<include>**.java</include>
 							</sourceFileIncludes>
+							<additionalparam>${javadoc.opts}</additionalparam>
 							<quiet>true</quiet>
 							<windowtitle>GeoWave ${project.version}</windowtitle>
 							<doctitle>GeoWave ${project.version}</doctitle>
 							<groups>
 								<group>
 									<title>Analytics</title>
-									<packages>mil.nga.giat.geowave.analytics*</packages>
+									<packages>mil.nga.giat.geowave.analytic*</packages>
 								</group>
 								<group>
-									<title>GeoTools Storage</title>
-									<packages>mil.nga.giat.geowave.gt*</packages>
+									<title>Data Adapter for Vector Data</title>
+									<packages>mil.nga.giat.geowave.adapter.vector*</packages>
 								</group>
 								<group>
-									<title>Storage</title>
-									<packages>mil.nga.giat.geowave.accumulo*:mil.nga.giat.geowave.store*</packages>
+									<title>Data Adapter for Raster Data</title>
+									<packages>mil.nga.giat.geowave.adapter.raster*</packages>
+								</group>
+								<group>
+									<title>Storage API</title>
+									<packages>mil.nga.giat.geowave.core.store*</packages>
+								</group>
+								<group>
+									<title>Spatial-Temporal Core</title>
+									<packages>mil.nga.giat.geowave.core.geotime*</packages>
+								</group>
+								<group>
+									<title>Accumulo Data Store</title>
+									<packages>mil.nga.giat.geowave.datastore.accumulo*</packages>
 								</group>
 								<group>
 									<title>Indexing</title>
-									<packages>mil.nga.giat.geowave.index*</packages>
+									<packages>mil.nga.giat.geowave.core.index*</packages>
+								</group>
+								<group>
+									<title>Command-Line Tools</title>
+									<packages>mil.nga.giat.geowave.core.cli*</packages>
 								</group>
 								<group>
 									<title>Ingest Framework</title>
-									<packages>mil.nga.giat.geowave.ingest*</packages>
+									<packages>mil.nga.giat.geowave.core.ingest*</packages>
 								</group>
 								<group>
-									<title>Base Ingest Types</title>
-									<packages>mil.nga.giat.geowave.types*</packages>
+									<title>Base Ingest Formats</title>
+									<packages>mil.nga.giat.geowave.format*</packages>
+								</group>
+								<group>
+									<title>Services</title>
+									<packages>mil.nga.giat.geowave.service*</packages>
+								</group>
+								<group>
+									<title>Examples</title>
+									<packages>mil.nga.giat.geowave.example*</packages>
 								</group>
 							</groups>
 						</configuration>
@@ -375,68 +600,55 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.eluder.coveralls</groupId>
-				<artifactId>coveralls-maven-plugin</artifactId>
-				<version>3.1.0-munge-hack</version>
-				<configuration>
-					<jacocoReports>
-						<jacocoReport>${project.basedir}/geowave-index/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-analytics/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-ingest/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-raster/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-store/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-types/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						-
-						<jacocoReport>${project.basedir}/geowave-vector/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-accumulo/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-						<jacocoReport>${project.basedir}/geowave-test/target/site/jacoco-it/jacoco.xml</jacocoReport>
-					</jacocoReports>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>com.googlecode.maven-java-formatter-plugin</groupId>
 				<artifactId>maven-java-formatter-plugin</artifactId>
 				<version>0.4</version>
 				<configuration>
-					<configFile>${formatter.location}</configFile>
+					<configFile>eclipse/eclipse-formatter.xml</configFile>
 				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>format</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>mil.nga.giat</groupId>
+						<artifactId>geowave-dev-resources</artifactId>
+						<version>1.0</version>
+					</dependency>
+				</dependencies>
 			</plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.version}</version>
-                <configuration>
-                    <failOnError>false</failOnError>
-                    <threshold>Medium</threshold>
-                    <effort>Max</effort>
-                    <xmlOutput>true</xmlOutput>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<configuration>
+					<failOnError>${findbugs.failOnError}</failOnError>
+					<threshold>${findbugs.threshold}</threshold>
+					<effort>${findbugs.effort}</effort>
+					<excludeFilterFile>${findbugs.filterFile}</excludeFilterFile>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<modules>
-		<module>geowave-index</module>
-		<module>geowave-store</module>
-		<module>geowave-accumulo</module>
-		<module>geowave-vector</module>
-		<module>geowave-raster</module>
-		<module>geowave-ingest</module>
-		<module>geowave-types</module>
-		<module>geowave-analytics</module>
-		<module>geowave-utils</module>
-		<module>geowave-client</module>
-		<module>geowave-services</module>
-		<module>geowave-deploy</module>
-		<module>geowave-benchmark</module>
-		<module>geowave-test</module>
+		<module>analytics</module>
+		<module>core</module>
+		<module>deploy</module>
+		<module>examples</module>
+		<module>extensions</module>
+		<module>services</module>
+		<module>test</module>
 	</modules>
 	<repositories>
 		<repository>
@@ -452,24 +664,50 @@
 			<name>Open Source Geospatial Foundation Repository</name>
 			<url>http://download.osgeo.org/webdav/geotools/</url>
 		</repository>
+		<repository>
+			<id>geowave-maven-releases</id>
+			<name>GeoWave AWS Release Repository</name>
+			<url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.version}</version>
-                <configuration>
-                    <findbugsXmlOutput>true</findbugsXmlOutput>
-                    <xmlOutput>true</xmlOutput>
-                    <effort>Max</effort>
-                    <threshold>Low</threshold>
-                    <failOnError>false</failOnError>
-                    <xmlOutputDirectory>${project.basedir}/target/site</xmlOutputDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </reporting>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>geowave-maven-releases</id>
+			<name>GeoWave AWS Release Repository</name>
+			<url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
+			<releases>
+				<updatePolicy>never</updatePolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>${findbugs.version}</version>
+				<configuration>
+					<findbugsXmlOutput>true</findbugsXmlOutput>
+					<xmlOutput>true</xmlOutput>
+					<effort>${findbugs.effort}</effort>
+					<threshold>${findbugs.threshold}</threshold>
+					<failOnError>${findbugs.failOnError}</failOnError>
+					<xmlOutputDirectory>${project.basedir}/target/site</xmlOutputDirectory>
+					<omitVisitors>${findbugs.omitVisitors}</omitVisitors>
+				</configuration>
+			</plugin>
+		</plugins>
+	</reporting>
 	<profiles>
 		<profile>
 			<id>accumulo-container</id>
@@ -486,7 +724,7 @@
 			</properties>
 		</profile>
 		<profile>
-			<id>ingest-singlejar</id>
+			<id>geowave-tools-singlejar</id>
 			<build>
 				<plugins>
 					<plugin>
@@ -525,7 +763,7 @@
 										<transformer
 											implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 											<manifestEntries>
-												<Main-Class>mil.nga.giat.geowave.ingest.IngestMain</Main-Class>
+												<Main-Class>mil.nga.giat.geowave.core.cli.GeoWaveMain</Main-Class>
 											</manifestEntries>
 										</transformer>
 										<transformer
@@ -533,7 +771,7 @@
 									</transformers>
 									<createDependencyReducedPom>false</createDependencyReducedPom>
 									<minimizeJar>false</minimizeJar>
-									<finalName>${project.build.finalName}-ingest-tool</finalName>
+									<finalName>${project.build.finalName}-tools</finalName>
 								</configuration>
 							</execution>
 						</executions>
@@ -548,79 +786,88 @@
 				<module>docs</module>
 			</modules>
 		</profile>
-                <profile>
-                    <id>cloudera</id>
-                    <properties>
-                        <hadoop.version>2.5.0-cdh5.2.0</hadoop.version>
-                    </properties>
-                    <repositories>
-                        <repository>
-                            <id>cloudera</id>
-                            <url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
-                            <releases>
-                                <enabled>true</enabled>
-                            </releases>
-                            <snapshots>
-                                <enabled>true</enabled>
-                            </snapshots>
-                        </repository>
-                        <repository>
-                            <releases>
-                                <enabled>true</enabled>
-                                <updatePolicy>always</updatePolicy>
-                                <checksumPolicy>warn</checksumPolicy>
-                            </releases>
-                            <snapshots>
-                                <enabled>false</enabled>
-                                <updatePolicy>never</updatePolicy>
-                                <checksumPolicy>fail</checksumPolicy>
-                            </snapshots>
-                            <id>HDPReleases</id>
-                            <name>HDP Releases</name>
-                            <url>http://repo.hortonworks.com/content/repositories/releases/</url>
-                            <layout>default</layout>
-                        </repository>
-                    </repositories>
-                </profile>
-                <profile>
-                    <id>hortonworks</id>
-                    <properties>
-                        <hadoop.version>2.6.0.2.2.0.0-2041</hadoop.version>
-                    </properties>
-                    <repositories>
-                        <repository>
-                            <releases>
-                                <enabled>true</enabled>
-                                <updatePolicy>always</updatePolicy>
-                                <checksumPolicy>warn</checksumPolicy>
-                            </releases>
-                            <snapshots>
-                                <enabled>false</enabled>
-                                <updatePolicy>never</updatePolicy>
-                                <checksumPolicy>fail</checksumPolicy>
-                            </snapshots>
-                            <id>HDPReleases</id>
-                            <name>HDP Releases</name>
-                            <url>http://repo.hortonworks.com/content/repositories/releases/</url>
-                            <layout>default</layout>
-                        </repository>
-                        <repository>
-                            <releases>
-                                <enabled>true</enabled>
-                                <updatePolicy>always</updatePolicy>
-                                <checksumPolicy>warn</checksumPolicy>
-                            </releases>
-                            <snapshots>
-                                <enabled>false</enabled>
-                                <updatePolicy>never</updatePolicy>
-                                <checksumPolicy>fail</checksumPolicy>
-                            </snapshots>
-                            <id>HDPJettyHadoop</id>
-                            <name>HDP Jetty Hadoop</name>
-                            <url>http://repo.hortonworks.com/content/repositories/jetty-hadoop/</url>
-                            <layout>default</layout>
-                        </repository>
-                    </repositories>
-                </profile>
-        </profiles>
+		<profile>
+			<id>cloudera</id>
+			<properties>
+				<hadoop.version>2.5.0-cdh5.2.0</hadoop.version>
+			</properties>
+			<repositories>
+				<repository>
+					<id>cloudera</id>
+					<url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<releases>
+						<enabled>true</enabled>
+						<updatePolicy>always</updatePolicy>
+						<checksumPolicy>warn</checksumPolicy>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+						<updatePolicy>never</updatePolicy>
+						<checksumPolicy>fail</checksumPolicy>
+					</snapshots>
+					<id>HDPReleases</id>
+					<name>HDP Releases</name>
+					<url>http://repo.hortonworks.com/content/repositories/releases/</url>
+					<layout>default</layout>
+				</repository>
+			</repositories>
+		</profile>
+		<profile>
+			<id>hortonworks</id>
+			<properties>
+				<hadoop.version>2.6.0.2.2.0.0-2041</hadoop.version>
+			</properties>
+			<repositories>
+				<repository>
+					<releases>
+						<enabled>true</enabled>
+						<updatePolicy>always</updatePolicy>
+						<checksumPolicy>warn</checksumPolicy>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+						<updatePolicy>never</updatePolicy>
+						<checksumPolicy>fail</checksumPolicy>
+					</snapshots>
+					<id>HDPReleases</id>
+					<name>HDP Releases</name>
+					<url>http://repo.hortonworks.com/content/repositories/releases/</url>
+					<layout>default</layout>
+				</repository>
+				<repository>
+					<releases>
+						<enabled>true</enabled>
+						<updatePolicy>always</updatePolicy>
+						<checksumPolicy>warn</checksumPolicy>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+						<updatePolicy>never</updatePolicy>
+						<checksumPolicy>fail</checksumPolicy>
+					</snapshots>
+					<id>HDPJettyHadoop</id>
+					<name>HDP Jetty Hadoop</name>
+					<url>http://repo.hortonworks.com/content/repositories/jetty-hadoop/</url>
+					<layout>default</layout>
+				</repository>
+			</repositories>
+		</profile>
+		<profile>
+			<id>doclint-java8-disable</id>
+			<activation>
+				<jdk>[1.8,)</jdk>
+			</activation>
+			<properties>
+				<javadoc.opts>-Xdoclint:none</javadoc.opts>
+			</properties>
+		</profile>
+	</profiles>
 </project>
